@@ -9,83 +9,15 @@
       font-family: 'Pixelify Sans', sans-serif;
       text-align: center;
       background: #fffbe7;
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
     }
 
     .game-area {
       position: relative;
-      width: 95vw;
-      max-width: 400px;
-      height: 85vh;
-      max-height: 700px;
+      width: 375px;
+      height: 420px;
       margin: 20px auto;
       border: 2px dashed #ccc;
       background-color: #fffbe7;
-      overflow: hidden;
-    }
-
-    .cupcake {
-      width: 25vw;
-      max-width: 120px;
-      position: absolute;
-      top: 8vh;
-      cursor: grab;
-      z-index: 2;
-      animation: float 3s ease-in-out infinite;
-    }
-
-    .cupcake:nth-child(4) { left: 4vw; }
-    .cupcake:nth-child(5) { left: 12vw; }
-    .cupcake:nth-child(6) { left: 20vw; }
-
-    .box {
-      width: 40vw;
-      max-width: 250px;
-      position: absolute;
-      bottom: 5vh;
-      left: 6.5vw;
-      z-index: 1;
-    }
-
-    .chatbox {
-      width: 15vw;
-      max-width: 90px;
-      position: absolute;
-      bottom: 33vh;
-      left: 20vw;
-      z-index: 3;
-      transition: opacity 0.3s ease;
-    }
-
-    .chatbox2 {
-      width: 8vw;
-      max-width: 55px;
-      position: absolute;
-      bottom: 38vh;
-      left: 14.5vw;
-      z-index: 3;
-      transition: opacity 0.3s ease;
-      opacity: 0;
-    }
-
-    #resetBtn {
-      display: none;
-      position: absolute;
-      bottom: 4vh;
-      left: 50%;
-      transform: translateX(-50%) scale(1);
-      transform-origin: center bottom;
-      padding: 8px 18px;
-      font-family: 'Pixelify Sans', sans-serif;
-      background-color: #ffc0cb;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 12px;
-      line-height: 1;
-      z-index: 5;
     }
 
     @keyframes float {
@@ -94,18 +26,54 @@
       100% { transform: translateY(0px); }
     }
 
-    @media (max-width: 350px) {
-      .cupcake {
-        width: 30vw;
-      }
-      .box {
-        width: 50vw;
-        left: 22vw;
-      }
-      #resetBtn {
-        font-size: 4vw;
-        padding: 12px 16px;
-      }
+    .cupcake {
+      width: 130px;
+      position: absolute;
+      top: 50px;
+      cursor: grab;
+      z-index: 2;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .box {
+      width: 250px;
+      position: absolute;
+      bottom: 12px;
+      left: 62px;
+      z-index: 1;
+    }
+
+    .chatbox {
+      position: absolute;
+      width: 90px;
+      bottom: 170px;
+      left: 235px;
+      z-index: 3;
+      transition: opacity 0.3s ease;
+    }
+
+    .chatbox2 {
+      position: absolute;
+      width: 60px;
+      bottom: 200px;
+      left: 160px;
+      z-index: 3;
+      transition: opacity 0.3s ease;
+    }
+
+    #resetBtn {
+      display: none;
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 14px;
+      font-family: 'Pixelify Sans', sans-serif;
+      background-color: #ffc0cb;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 5;
     }
   </style>
 </head>
@@ -113,12 +81,12 @@
   <h1>⋆｡·°ʚ🍓ɞ°‧｡⋆ </h1>
 
   <div class="game-area">
-    <img src="box1.png" id="box" class="box" alt="Box" />
-    <img src="chatbox.png" id="chatbox" class="chatbox" alt="Chatbox" />
-    <img src="chatbox2.png" id="chatbox2" class="chatbox2" alt="Chatbox 2" />
-    <img src="cup.png" class="cupcake" draggable="true" alt="Cupcake 1" />
-    <img src="cup1.png" class="cupcake" draggable="true" alt="Cupcake 2" />
-    <img src="cup2.png" class="cupcake" draggable="true" alt="Cupcake 3" />
+    <img src="box1.png" id="box" class="box" />
+    <img src="chatbox.png" id="chatbox" class="chatbox" />
+    <img src="chatbox2.png" id="chatbox2" class="chatbox2" style="opacity: 0;" />
+    <img src="cup.png" class="cupcake" draggable="true" style="left: 20px;" />
+    <img src="cup1.png" class="cupcake" draggable="true" style="left: 140px;" />
+    <img src="cup2.png" class="cupcake" draggable="true" style="left: 260px;" />
 
     <button id="resetBtn">Reset Game</button>
   </div>
@@ -129,90 +97,69 @@
     const chatbox = document.getElementById('chatbox');
     const chatbox2 = document.getElementById('chatbox2');
     const resetBtn = document.getElementById('resetBtn');
-    const gameArea = document.querySelector('.game-area');
 
     let dragged = null;
     let offsetX = 0;
     let offsetY = 0;
     let droppedCount = 0;
 
-    // Store positions relative to viewport as vw/vh units
+    // Store initial cupcake positions to reset if needed
     const initialPositions = [];
+    cupcakes.forEach((cupcake, i) => {
+      initialPositions[i] = { left: cupcake.offsetLeft, top: cupcake.offsetTop };
 
-    function pxToVw(px) {
-      return (px / window.innerWidth) * 100;
-    }
-    function pxToVh(px) {
-      return (px / window.innerHeight) * 100;
-    }
-    function vwToPx(vw) {
-      return (vw * window.innerWidth) / 100;
-    }
-    function vhToPx(vh) {
-      return (vh * window.innerHeight) / 100;
-    }
-
-    window.addEventListener('load', () => {
-      const gameRect = gameArea.getBoundingClientRect();
-      cupcakes.forEach((cupcake, i) => {
-        const leftPx = cupcake.offsetLeft;
-        const topPx = cupcake.offsetTop;
-
-        const leftVw = pxToVw(gameRect.left + leftPx);
-        const topVh = pxToVh(gameRect.top + topPx);
-
-        initialPositions[i] = { leftVw, topVh };
-
-        cupcake.style.left = leftPx + 'px';
-        cupcake.style.top = topPx + 'px';
-      });
-    });
-
-    cupcakes.forEach((cupcake) => {
+      // Listen for mouse and touch drag start
       cupcake.addEventListener('mousedown', startDrag);
       cupcake.addEventListener('touchstart', startDrag, { passive: false });
     });
 
     document.addEventListener('mousemove', onDrag);
     document.addEventListener('touchmove', onDrag, { passive: false });
+
     document.addEventListener('mouseup', endDrag);
     document.addEventListener('touchend', endDrag);
 
-    function startDrag(e) {
-      e.preventDefault();
-      dragged = e.target.closest('.cupcake');
-      if (!dragged) return;
+   const gameArea = document.querySelector('.game-area');
 
-      const gameAreaRect = gameArea.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+function startDrag(e) {
+  e.preventDefault();
+  dragged = e.target.closest('.cupcake');
+  if (!dragged) return;
 
-      offsetX = clientX - dragged.offsetLeft - gameAreaRect.left;
-      offsetY = clientY - dragged.offsetTop - gameAreaRect.top;
+  const gameAreaRect = gameArea.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-      chatbox.style.opacity = 0;
-      dragged.style.cursor = 'grabbing';
-      dragged.style.position = 'absolute';
-      dragged.style.zIndex = 10;
-    }
+  // Calculate offset relative to gameArea top-left corner
+  offsetX = clientX - dragged.offsetLeft - gameAreaRect.left;
+  offsetY = clientY - dragged.offsetTop - gameAreaRect.top;
 
-    function onDrag(e) {
-      if (!dragged) return;
-      e.preventDefault();
+  if (chatbox) chatbox.style.opacity = 0;
 
-      const gameAreaRect = gameArea.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  dragged.style.cursor = 'grabbing';
+  dragged.style.position = 'absolute';
+  dragged.style.zIndex = 10;
+}
 
-      let left = clientX - gameAreaRect.left - offsetX;
-      let top = clientY - gameAreaRect.top - offsetY;
+function onDrag(e) {
+  if (!dragged) return;
+  e.preventDefault();
 
-      left = Math.max(0, Math.min(left, gameArea.clientWidth - dragged.clientWidth));
-      top = Math.max(0, Math.min(top, gameArea.clientHeight - dragged.clientHeight));
+  const gameAreaRect = gameArea.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-      dragged.style.left = `${left}px`;
-      dragged.style.top = `${top}px`;
-    }
+  // Position relative to gameArea top-left corner minus offset
+  let left = clientX - gameAreaRect.left - offsetX;
+  let top = clientY - gameAreaRect.top - offsetY;
+
+  // Optional: constrain within game-area bounds
+  left = Math.max(0, Math.min(left, gameArea.clientWidth - dragged.clientWidth));
+  top = Math.max(0, Math.min(top, gameArea.clientHeight - dragged.clientHeight));
+
+  dragged.style.left = `${left}px`;
+  dragged.style.top = `${top}px`;
+}
 
     function endDrag(e) {
       if (!dragged) return;
@@ -220,45 +167,33 @@
       const boxRect = box.getBoundingClientRect();
       const draggedRect = dragged.getBoundingClientRect();
 
-      const centerZone = {
-        left: boxRect.left + boxRect.width * 0.35,
-        right: boxRect.left + boxRect.width * 0.65,
-        top: boxRect.top + boxRect.height * 0.35,
-        bottom: boxRect.top + boxRect.height * 0.65
-      };
+      // Check if cupcake dropped inside the box
+      if (
+        draggedRect.left < boxRect.right &&
+        draggedRect.right > boxRect.left &&
+        draggedRect.top < boxRect.bottom &&
+        draggedRect.bottom > boxRect.top
+      ) {
+        // Move cupcake inside box, relative positioning
+        const offsetLeft = draggedRect.left - boxRect.left;
+        const offsetTop = draggedRect.top - boxRect.top;
 
-      const cupcakeCenterX = draggedRect.left + draggedRect.width / 2;
-      const cupcakeCenterY = draggedRect.top + draggedRect.height / 2;
-
-      const isInCenter = (
-        cupcakeCenterX > centerZone.left &&
-        cupcakeCenterX < centerZone.right &&
-        cupcakeCenterY > centerZone.top &&
-        cupcakeCenterY < centerZone.bottom
-      );
-
-      if (isInCenter) {
-        dragged.style.display = 'none';
+        box.appendChild(dragged);
+        dragged.style.left = `${offsetLeft}px`;
+        dragged.style.top = `${offsetTop}px`;
+        dragged.style.cursor = 'default';
 
         droppedCount++;
         if (droppedCount === cupcakes.length) {
-          chatbox2.style.opacity = 1;
+          if (chatbox2) chatbox2.style.opacity = 1;
           resetBtn.style.display = 'block';
         }
       } else {
-        if (dragged.parentElement !== gameArea) {
-          gameArea.appendChild(dragged);
-        }
+        // If not dropped in box, reset position (optional)
         const idx = Array.from(cupcakes).indexOf(dragged);
         if (idx !== -1) {
-          const gameRect = gameArea.getBoundingClientRect();
-          const leftPx = vwToPx(initialPositions[idx].leftVw) - gameRect.left;
-          const topPx = vhToPx(initialPositions[idx].topVh) - gameRect.top;
-
-          dragged.style.left = `${leftPx}px`;
-          dragged.style.top = `${topPx}px`;
-          dragged.style.cursor = 'grab';
-          dragged.style.display = 'block';
+          dragged.style.left = initialPositions[idx].left + 'px';
+          dragged.style.top = initialPositions[idx].top + 'px';
         }
       }
 
@@ -267,33 +202,19 @@
     }
 
     resetBtn.addEventListener('click', () => {
-      const gameRect = gameArea.getBoundingClientRect();
+      // Reset cupcakes to their original positions and parent
       cupcakes.forEach((cupcake, i) => {
-        gameArea.appendChild(cupcake);
-        const leftPx = vwToPx(initialPositions[i].leftVw) - gameRect.left;
-        const topPx = vhToPx(initialPositions[i].topVh) - gameRect.top;
-
-        cupcake.style.left = `${leftPx}px`;
-        cupcake.style.top = `${topPx}px`;
+        document.querySelector('.game-area').appendChild(cupcake);
+        cupcake.style.left = initialPositions[i].left + 'px';
+        cupcake.style.top = initialPositions[i].top + 'px';
         cupcake.style.cursor = 'grab';
-        cupcake.style.display = 'block';
       });
 
+      // Reset state and UI
       droppedCount = 0;
       chatbox.style.opacity = 1;
       chatbox2.style.opacity = 0;
       resetBtn.style.display = 'none';
-    });
-
-    window.addEventListener('resize', () => {
-      const gameRect = gameArea.getBoundingClientRect();
-      cupcakes.forEach((cupcake, i) => {
-        const leftPx = vwToPx(initialPositions[i].leftVw) - gameRect.left;
-        const topPx = vhToPx(initialPositions[i].topVh) - gameRect.top;
-
-        cupcake.style.left = `${leftPx}px`;
-        cupcake.style.top = `${topPx}px`;
-      });
     });
   </script>
 </body>
