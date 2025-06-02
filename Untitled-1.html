@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cupcakes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Pixelify Sans', sans-serif;
+      text-align: center;
+      background: #fffbe7;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    .game-area {
+      position: relative;
+      width: 95vw;
+      max-width: 400px;
+      height: 85vh;
+      max-height: 700px;
+      margin: 20px auto;
+      border: 2px dashed #ccc;
+      background-color: #fffbe7;
+      overflow: hidden;
+    }
+
+    .cupcake {
+      width: 25vw;
+      max-width: 120px;
+      position: absolute;
+      top: 8vh;
+      cursor: grab;
+      z-index: 2;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .cupcake:nth-child(4) { left: 7vw; }
+    .cupcake:nth-child(5) { left: 15vw; }
+    .cupcake:nth-child(6) { left: 23vw; }
+
+    .box {
+      width: 40vw;
+      max-width: 250px;
+      position: absolute;
+      bottom: 5vh;
+      left: 7.5vw;
+      z-index: 1;
+    }
+
+    .chatbox {
+      width: 15vw;
+      max-width: 90px;
+      position: absolute;
+      bottom: 33vh;
+      left: 25vw;
+      z-index: 3;
+      transition: opacity 0.3s ease;
+    }
+
+    .chatbox2 {
+      width: 8vw;
+      max-width: 55px;
+      position: absolute;
+      bottom: 38vh;
+      left: 17vw;
+      z-index: 3;
+      transition: opacity 0.3s ease;
+      opacity: 0;
+    }
+
+    #resetBtn {
+      display: none;
+      position: absolute;
+      bottom: 4vh;
+      left: 50%;
+      transform: translateX(-50%) scale(1);
+      transform-origin: center bottom;
+      padding: 8px 18px;
+      font-family: 'Pixelify Sans', sans-serif;
+      background-color: #ffc0cb;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      z-index: 5;
+    }
+
+    @keyframes float {
+      0%   { transform: translateY(0px); }
+      50%  { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+
+    @media (max-width: 350px) {
+      .cupcake {
+        width: 30vw;
+      }
+      .box {
+        width: 50vw;
+        left: 22vw;
+      }
+      #resetBtn {
+        font-size: 4vw;
+        padding: 12px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>⋆｡·°ʚ🍓ɞ°‧｡⋆ </h1>
+
+  <div class="game-area">
+    <img src="box1.png" id="box" class="box" alt="Box" />
+    <img src="chatbox.png" id="chatbox" class="chatbox" alt="Chatbox" />
+    <img src="chatbox2.png" id="chatbox2" class="chatbox2" alt="Chatbox 2" />
+    <img src="cup.png" class="cupcake" draggable="true" alt="Cupcake 1" />
+    <img src="cup1.png" class="cupcake" draggable="true" alt="Cupcake 2" />
+    <img src="cup2.png" class="cupcake" draggable="true" alt="Cupcake 3" />
+
+    <button id="resetBtn">Reset Game</button>
+  </div>
+
+  <script>
+    const cupcakes = document.querySelectorAll('.cupcake');
+    const box = document.getElementById('box');
+    const chatbox = document.getElementById('chatbox');
+    const chatbox2 = document.getElementById('chatbox2');
+    const resetBtn = document.getElementById('resetBtn');
+    const gameArea = document.querySelector('.game-area');
+
+    let dragged = null;
+    let offsetX = 0;
+    let offsetY = 0;
+    let droppedCount = 0;
+
+    // Store positions relative to viewport as vw/vh units
+    const initialPositions = [];
+
+    function pxToVw(px) {
+      return (px / window.innerWidth) * 100;
+    }
+    function pxToVh(px) {
+      return (px / window.innerHeight) * 100;
+    }
+    function vwToPx(vw) {
+      return (vw * window.innerWidth) / 100;
+    }
+    function vhToPx(vh) {
+      return (vh * window.innerHeight) / 100;
+    }
+
+    window.addEventListener('load', () => {
+      const gameRect = gameArea.getBoundingClientRect();
+      cupcakes.forEach((cupcake, i) => {
+        const leftPx = cupcake.offsetLeft;
+        const topPx = cupcake.offsetTop;
+
+        const leftVw = pxToVw(gameRect.left + leftPx);
+        const topVh = pxToVh(gameRect.top + topPx);
+
+        initialPositions[i] = { leftVw, topVh };
+
+        cupcake.style.left = leftPx + 'px';
+        cupcake.style.top = topPx + 'px';
+      });
+    });
+
+    cupcakes.forEach((cupcake) => {
+      cupcake.addEventListener('mousedown', startDrag);
+      cupcake.addEventListener('touchstart', startDrag, { passive: false });
+    });
+
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('touchmove', onDrag, { passive: false });
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchend', endDrag);
+
+    function startDrag(e) {
+      e.preventDefault();
+      dragged = e.target.closest('.cupcake');
+      if (!dragged) return;
+
+      const gameAreaRect = gameArea.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      offsetX = clientX - dragged.offsetLeft - gameAreaRect.left;
+      offsetY = clientY - dragged.offsetTop - gameAreaRect.top;
+
+      chatbox.style.opacity = 0;
+      dragged.style.cursor = 'grabbing';
+      dragged.style.position = 'absolute';
+      dragged.style.zIndex = 10;
+    }
+
+    function onDrag(e) {
+      if (!dragged) return;
+      e.preventDefault();
+
+      const gameAreaRect = gameArea.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      let left = clientX - gameAreaRect.left - offsetX;
+      let top = clientY - gameAreaRect.top - offsetY;
+
+      left = Math.max(0, Math.min(left, gameArea.clientWidth - dragged.clientWidth));
+      top = Math.max(0, Math.min(top, gameArea.clientHeight - dragged.clientHeight));
+
+      dragged.style.left = `${left}px`;
+      dragged.style.top = `${top}px`;
+    }
+
+    function endDrag(e) {
+      if (!dragged) return;
+
+      const boxRect = box.getBoundingClientRect();
+      const draggedRect = dragged.getBoundingClientRect();
+
+      const centerZone = {
+        left: boxRect.left + boxRect.width * 0.35,
+        right: boxRect.left + boxRect.width * 0.65,
+        top: boxRect.top + boxRect.height * 0.35,
+        bottom: boxRect.top + boxRect.height * 0.65
+      };
+
+      const cupcakeCenterX = draggedRect.left + draggedRect.width / 2;
+      const cupcakeCenterY = draggedRect.top + draggedRect.height / 2;
+
+      const isInCenter = (
+        cupcakeCenterX > centerZone.left &&
+        cupcakeCenterX < centerZone.right &&
+        cupcakeCenterY > centerZone.top &&
+        cupcakeCenterY < centerZone.bottom
+      );
+
+      if (isInCenter) {
+        dragged.style.display = 'none';
+
+        droppedCount++;
+        if (droppedCount === cupcakes.length) {
+          chatbox2.style.opacity = 1;
+          resetBtn.style.display = 'block';
+        }
+      } else {
+        if (dragged.parentElement !== gameArea) {
+          gameArea.appendChild(dragged);
+        }
+        const idx = Array.from(cupcakes).indexOf(dragged);
+        if (idx !== -1) {
+          const gameRect = gameArea.getBoundingClientRect();
+          const leftPx = vwToPx(initialPositions[idx].leftVw) - gameRect.left;
+          const topPx = vhToPx(initialPositions[idx].topVh) - gameRect.top;
+
+          dragged.style.left = `${leftPx}px`;
+          dragged.style.top = `${topPx}px`;
+          dragged.style.cursor = 'grab';
+          dragged.style.display = 'block';
+        }
+      }
+
+      dragged.style.zIndex = 2;
+      dragged = null;
+    }
+
+    resetBtn.addEventListener('click', () => {
+      const gameRect = gameArea.getBoundingClientRect();
+      cupcakes.forEach((cupcake, i) => {
+        gameArea.appendChild(cupcake);
+        const leftPx = vwToPx(initialPositions[i].leftVw) - gameRect.left;
+        const topPx = vhToPx(initialPositions[i].topVh) - gameRect.top;
+
+        cupcake.style.left = `${leftPx}px`;
+        cupcake.style.top = `${topPx}px`;
+        cupcake.style.cursor = 'grab';
+        cupcake.style.display = 'block';
+      });
+
+      droppedCount = 0;
+      chatbox.style.opacity = 1;
+      chatbox2.style.opacity = 0;
+      resetBtn.style.display = 'none';
+    });
+
+    window.addEventListener('resize', () => {
+      const gameRect = gameArea.getBoundingClientRect();
+      cupcakes.forEach((cupcake, i) => {
+        const leftPx = vwToPx(initialPositions[i].leftVw) - gameRect.left;
+        const topPx = vhToPx(initialPositions[i].topVh) - gameRect.top;
+
+        cupcake.style.left = `${leftPx}px`;
+        cupcake.style.top = `${topPx}px`;
+      });
+    });
+  </script>
+</body>
+</html>
